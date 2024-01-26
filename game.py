@@ -7,40 +7,54 @@ from player import Player
 pygame.init()
 
 # Ratio of the screen
-WIDTH = 800
-HEIGHT = 600
+WIDTH:int = 800
+HEIGHT:int = 600
 
 # Size of the terrain
-LINE = 9
-COL = None
+LINE:int = 1
+COL:int = 0
 
 # Parameter of the zoom
-ZOOM = 2
+ZOOM:int = 2
 
 
 # Size of the assets
-X_SIZE = 16 * ZOOM
-Y_SIZE = 16 * ZOOM
+X_SIZE:int = 16 * ZOOM
+Y_SIZE:int = 16 * ZOOM
 
 # Get all maps from the maps folder ending with .map
-maps = [f for f in glob.glob("./maps/*.map")]
+maps:list[str] = [f for f in glob.glob("./maps/*.map")]
 
 # On lit le terrain dans le fichier terrain
+terrain_size:int = 0
+terrain_grid:list[int] = []
 with open(maps[1], "r") as fichier:
-    terrain_grid = [int(nombre) for nombre in fichier.read().split(',')]
-COL = len(terrain_grid) // LINE
 
+    # On lit chaque caractère du fichier
+    for l in fichier.read():
+        if l == "\n":
+            LINE += 1
+        elif l != ',':
+            terrain_size += 1
+            terrain_grid.append(int(l))
+
+
+# On divise le nombre de case par les lignes pour avoir le nombre de colonne
+COL:int = terrain_size // LINE
+
+# On genère les différentes layers
 item_grid:list[list] = [0 for _ in range(COL * LINE)]
 bomb_grid:list[Bomb] = []
 
 # Création du joueur
-joueur = Player(1, 1, "Hugo")
+joueur:Player = Player(1, 1, "Hugo")
 
 # === TEXTURE INITIALISATION ===
 
 player_texture_path:str = "./assets/"
 terrain_texture_path:str = "./assets/"
 bombe_texture_path:str = "./assets/"
+explosion_texture_path:str = "./assets/"
 
 player_up = pygame.image.load(f"{player_texture_path}player_up.png")
 player_down = pygame.image.load(f"{player_texture_path}player_down.png")
@@ -72,12 +86,27 @@ bombe_0 = pygame.transform.scale(bombe_0, (int(X_SIZE), int(Y_SIZE)))
 bombe_1 = pygame.transform.scale(bombe_1, (int(X_SIZE), int(Y_SIZE)))
 bombe_2 = pygame.transform.scale(bombe_2, (int(X_SIZE), int(Y_SIZE)))
 
+explosion_0 = pygame.image.load(f"{explosion_texture_path}explosion_0.png")
+explosion_1 = pygame.image.load(f"{explosion_texture_path}explosion_1.png")
+explosion_2 = pygame.image.load(f"{explosion_texture_path}explosion_2.png")
+explosion_3 = pygame.image.load(f"{explosion_texture_path}explosion_3.png")
+explosion_4 = pygame.image.load(f"{explosion_texture_path}explosion_4.png")
+explosion_5 = pygame.image.load(f"{explosion_texture_path}explosion_5.png")
+
+explosion_0 = pygame.transform.scale(explosion_0, (int(X_SIZE), int(Y_SIZE)))
+explosion_1 = pygame.transform.scale(explosion_1, (int(X_SIZE), int(Y_SIZE)))
+explosion_2 = pygame.transform.scale(explosion_2, (int(X_SIZE), int(Y_SIZE)))
+explosion_3 = pygame.transform.scale(explosion_3, (int(X_SIZE), int(Y_SIZE)))
+explosion_4 = pygame.transform.scale(explosion_4, (int(X_SIZE), int(Y_SIZE)))
+explosion_5 = pygame.transform.scale(explosion_5, (int(X_SIZE), int(Y_SIZE)))
+
 # ==============================
 
 
 
-terrain_list = [wall, grass, shadow, brick, air]
-bombe_sprite = [bombe_0, bombe_1, bombe_2]
+terrain_list:list[pygame.Surface] = [wall, grass, shadow, brick, air]
+bombe_sprite:list[pygame.Surface] = [bombe_0, bombe_1, bombe_2]
+explo_sprite:list[pygame.Surface] = [explosion_0, explosion_1, explosion_2, explosion_3, explosion_4, explosion_5]
 
 
 
@@ -129,22 +158,28 @@ while True:
     # Affichage de la grille terrain
     for i in range(LINE):
         for j in range(COL):
-            index = i * COL + j
-            cell = terrain_grid[index]
+            index:int = i * COL + j
+            cell:int = terrain_grid[index]
             fenetre.blit(terrain_list[cell], (j * X_SIZE, i * Y_SIZE))
 
-    BOMB_TIMER = 60 #ticks per frame
+    BOMB_TIMER:int = 60 #ticks per frame
+    EXPLO_TIMER:int = 20 #ticks
 
     # Pour chaque bombe posée
     for Bombe in bomb_grid:
         Bombe.tick += 1
 
+        print(Bombe.tick)
         # Si la bombe explose
         if Bombe.tick == 180:
             # On actualise la capacité du joueur
             Bombe.origin.bombe_posee -= 1
             # On replace le terrain d'origine
             terrain_grid[Bombe.x + Bombe.y * COL] = Bombe.cell_from
+
+
+
+
 
             for i in range(Bombe.x - Bombe.range, Bombe.x + Bombe.range + 1):
                 idx = i + Bombe.y * COL
@@ -168,14 +203,26 @@ while True:
                     # Si la case en dessous est une ombre changer le sprite
                     terrain_grid[idx + COL] = 1
 
+        elif Bombe.tick == 300:
+            
+            """
+            On doit attendre la fin de l'anim de l'explosion
+            à ajouter
+            """
 
             # Et enfin on retire la bombe
             bomb_grid.remove(Bombe)
             del Bombe
-        
-        # Sinon on affiche la texture de la bombe
+
         else:
-            fenetre.blit(bombe_sprite[Bombe.tick//BOMB_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
+            
+            # Sinon on affiche la texture de la bombe
+            if Bombe.tick < 180:
+                fenetre.blit(bombe_sprite[Bombe.tick//BOMB_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
+            else:
+                if Bombe.tick % EXPLO_TIMER == 0:
+                    fenetre.blit(grass, (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
+                fenetre.blit(explo_sprite[(Bombe.tick - 180)//EXPLO_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
 
 
     fenetre.blit(player_image, (joueur.x * X_SIZE, joueur.y * Y_SIZE))
