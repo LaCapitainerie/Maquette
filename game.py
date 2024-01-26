@@ -1,15 +1,18 @@
 import pygame
 import sys
 import glob
+from bomb import Bomb
+from player import Player
 
 pygame.init()
 
 # Ratio of the screen
-WIDTH = 1600
+WIDTH = 800
 HEIGHT = 600
 
 # Size of the terrain
-LINE = 9
+LINE = 13
+COL = None
 
 # Parameter of the zoom
 ZOOM = 2
@@ -19,17 +22,21 @@ ZOOM = 2
 X_SIZE = 16 * ZOOM
 Y_SIZE = 16 * ZOOM
 
-# Get all maps from the maps folder
+# Get all maps from the maps folder ending with .map
 maps = [f for f in glob.glob("./maps/*.map")]
 
 # On lit le terrain dans le fichier terrain
-with open(maps[1], "r") as fichier:
+with open(maps[0], "r") as fichier:
     terrain_grid = [int(nombre) for nombre in fichier.read().split(',')]
 COL = len(terrain_grid) // LINE
 
 item_grid:list[list] = [0 for _ in range(COL * LINE)]
+bomb_grid:list[Bomb] = []
 
-pos_joueur = [1, 1]
+# Création du joueur
+joueur = Player(1, 1, "Hugo")
+
+# === TEXTURE INITIALISATION ===
 
 player_texture_path:str = "./player assets/"
 terrain_texture_path:str = "./terrain assets/"
@@ -65,8 +72,14 @@ bombe_0 = pygame.transform.scale(bombe_0, (int(X_SIZE), int(Y_SIZE)))
 bombe_1 = pygame.transform.scale(bombe_1, (int(X_SIZE), int(Y_SIZE)))
 bombe_2 = pygame.transform.scale(bombe_2, (int(X_SIZE), int(Y_SIZE)))
 
+# ==============================
+
+
+
 terrain_list = [wall, grass, shadow, brick, air]
-item_list = [bombe_0, bombe_1, bombe_2]
+bombe_sprite = [bombe_0, bombe_1, bombe_2]
+
+
 
 
 player_image = player_down
@@ -83,28 +96,32 @@ while True:
 
     
         elif event.type == pygame.KEYDOWN:
-            index = (pos_joueur[1]+1) * COL + pos_joueur[0]
+            index = (joueur.y+1) * COL + joueur.x
             print(index, item_grid, item_grid[index])
-            if event.key == pygame.K_LEFT and pos_joueur[0] > 0:
+            if event.key == pygame.K_LEFT and joueur.x > 0:
                 if 3 != terrain_grid[index - 1] != 0 and terrain_grid[index - 1] != 4:
-                    pos_joueur[0] -= 1
+                    joueur.x -= 1
                 player_image = player_left
-            elif event.key == pygame.K_RIGHT and pos_joueur[0] < COL - 1:
+            elif event.key == pygame.K_RIGHT and joueur.x < COL - 1:
                 if 3 != terrain_grid[index + 1] != 0 and terrain_grid[index + 1] != 4:
-                    pos_joueur[0] += 1
+                    joueur.x += 1
                 player_image = player_right
-            elif event.key == pygame.K_UP and (pos_joueur[1]+1) > 0:
+            elif event.key == pygame.K_UP and (joueur.y+1) > 0:
                 if 3 != terrain_grid[index - COL] != 0 and terrain_grid[index - COL] != 4:
-                    pos_joueur[1] -= 1
+                    joueur.y -= 1
                 player_image = player_up
-            elif event.key == pygame.K_DOWN and (pos_joueur[1]+1) < LINE - 1:
+            elif event.key == pygame.K_DOWN and (joueur.y+1) < LINE - 1:
                 if 3 != terrain_grid[index + COL] != 0 and terrain_grid[index + COL] != 4:
-                    pos_joueur[1] += 1
+                    joueur.y += 1
                 player_image = player_down
 
-            elif event.key == pygame.K_SPACE and item_grid[index] == 0:
-                item_grid[index] = 4
-                terrain_grid[index] = 4
+            elif event.key == pygame.K_SPACE and terrain_grid[index] != 4:
+
+                # Si le joueur à encore des bombes à poser
+                if joueur.bombe_max > joueur.bombe_posee:
+                    bomb_grid.append(Bomb(joueur.x, joueur.y+1, terrain_grid[index], joueur))
+                    joueur.bombe_posee += 1
+                    terrain_grid[index] = 4
                 
                 
 
@@ -117,32 +134,29 @@ while True:
             cell = terrain_grid[index]
             fenetre.blit(terrain_list[cell], (j * X_SIZE, i * Y_SIZE))
 
-            # Si on affiche un terrain disponible
-            # Affichage de la grille item
-            objet = item_grid[index]
-            if objet > 3:
+    BOMB_TIMER = 60 #ticks
 
-                # Incrémentation du compteur de la bombe
-                item_grid[index] += 1
-                
-                BOMB_TIMER = 60 #ticks
+    # Pour chaque bombe posée
+    for Bombe in bomb_grid:
+        Bombe.tick += 1
 
-                # Si la bombe est arrivée à la fin du décompte
-                if item_grid[index] == BOMB_TIMER* 3:
-                    # On retire la bombe
-                    item_grid[index] = 0
-                    terrain_grid[index] = 1
+        # Si la bombe est arrivée à la fin
+        if Bombe.tick == 180:
+            # On actualise la capacité du joueur
+            Bombe.origin.bombe_posee -= 1
+            # On replace le terrain d'origine
+            terrain_grid[Bombe.x + Bombe.y * COL] = Bombe.cell_from
 
-                    # Puis on execute les actions de la bombe
-
-                else:
-                    # Affichage des bombes
-                    fenetre.blit(item_list[item_grid[index]//BOMB_TIMER], (j * X_SIZE, i * Y_SIZE))
-
+            # Et on retire la bombe
+            bomb_grid.remove(Bombe)
+            del Bombe
+        
+        # Sinon on affiche la texture de la bombe
+        else:
+            fenetre.blit(bombe_sprite[Bombe.tick//BOMB_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
 
 
-
-    fenetre.blit(player_image, (pos_joueur[0] * X_SIZE, pos_joueur[1] * Y_SIZE))
+    fenetre.blit(player_image, (joueur.x * X_SIZE, joueur.y * Y_SIZE))
 
 
     pygame.display.flip()
