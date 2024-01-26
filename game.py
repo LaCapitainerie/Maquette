@@ -11,7 +11,7 @@ WIDTH = 800
 HEIGHT = 600
 
 # Size of the terrain
-LINE = 13
+LINE = 9
 COL = None
 
 # Parameter of the zoom
@@ -26,7 +26,7 @@ Y_SIZE = 16 * ZOOM
 maps = [f for f in glob.glob("./maps/*.map")]
 
 # On lit le terrain dans le fichier terrain
-with open(maps[0], "r") as fichier:
+with open(maps[1], "r") as fichier:
     terrain_grid = [int(nombre) for nombre in fichier.read().split(',')]
 COL = len(terrain_grid) // LINE
 
@@ -38,9 +38,9 @@ joueur = Player(1, 1, "Hugo")
 
 # === TEXTURE INITIALISATION ===
 
-player_texture_path:str = "./player assets/"
-terrain_texture_path:str = "./terrain assets/"
-bombe_texture_path:str = "./bombe assets/"
+player_texture_path:str = "./assets/"
+terrain_texture_path:str = "./assets/"
+bombe_texture_path:str = "./assets/"
 
 player_up = pygame.image.load(f"{player_texture_path}player_up.png")
 player_down = pygame.image.load(f"{player_texture_path}player_down.png")
@@ -97,7 +97,6 @@ while True:
     
         elif event.type == pygame.KEYDOWN:
             index = (joueur.y+1) * COL + joueur.x
-            print(index, item_grid, item_grid[index])
             if event.key == pygame.K_LEFT and joueur.x > 0:
                 if 3 != terrain_grid[index - 1] != 0 and terrain_grid[index - 1] != 4:
                     joueur.x -= 1
@@ -119,7 +118,7 @@ while True:
 
                 # Si le joueur à encore des bombes à poser
                 if joueur.bombe_max > joueur.bombe_posee:
-                    bomb_grid.append(Bomb(joueur.x, joueur.y+1, terrain_grid[index], joueur))
+                    bomb_grid.append(Bomb(joueur.x, joueur.y+1, joueur.range, terrain_grid[index], joueur))
                     joueur.bombe_posee += 1
                     terrain_grid[index] = 4
                 
@@ -134,20 +133,43 @@ while True:
             cell = terrain_grid[index]
             fenetre.blit(terrain_list[cell], (j * X_SIZE, i * Y_SIZE))
 
-    BOMB_TIMER = 60 #ticks
+    BOMB_TIMER = 60 #ticks per frame
 
     # Pour chaque bombe posée
     for Bombe in bomb_grid:
         Bombe.tick += 1
 
-        # Si la bombe est arrivée à la fin
+        # Si la bombe explose
         if Bombe.tick == 180:
             # On actualise la capacité du joueur
             Bombe.origin.bombe_posee -= 1
             # On replace le terrain d'origine
             terrain_grid[Bombe.x + Bombe.y * COL] = Bombe.cell_from
 
-            # Et on retire la bombe
+            for i in range(Bombe.x - Bombe.range, Bombe.x + Bombe.range + 1):
+                idx = i + Bombe.y * COL
+                print(idx, terrain_grid[idx])
+                # Si la bombe explose sur un mur
+                if terrain_grid[idx] == 3:
+                    # On regarde la case superieur pour savoir si remplacer par une ombre ou un plain
+                    terrain_grid[idx] = 1 if terrain_grid[idx - COL] != 0 and terrain_grid[idx - COL] != 3 else 2
+
+                    # Si la case en dessous est une ombre changer le sprite
+                    terrain_grid[idx + COL] = 1
+
+            for i in range(Bombe.y - Bombe.range, Bombe.y + Bombe.range + 1):
+                idx = Bombe.x + i * COL
+
+                # Si la bombe explose sur un mur
+                if terrain_grid[idx] == 3:
+                    # On regarde la case superieur pour savoir si remplacer par une ombre ou un plain
+                    terrain_grid[idx] = 1 if terrain_grid[idx - COL] != 0 and terrain_grid[idx - COL] != 3 else 2
+
+                    # Si la case en dessous est une ombre changer le sprite
+                    terrain_grid[idx + COL] = 1
+
+
+            # Et enfin on retire la bombe
             bomb_grid.remove(Bombe)
             del Bombe
         
