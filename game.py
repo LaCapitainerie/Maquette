@@ -1,7 +1,7 @@
 import pygame
 import sys
 import glob
-from bomb import Bomb
+from bomb import Bomb, Explosion
 from player import Player
 
 pygame.init()
@@ -25,10 +25,11 @@ Y_SIZE:int = 16 * ZOOM
 # Get all maps from the maps folder ending with .map
 maps:list[str] = [f for f in glob.glob("./maps/*.map")]
 
+
 # On lit le terrain dans le fichier terrain
 terrain_size:int = 0
 terrain_grid:list[int] = []
-with open(maps[1], "r") as fichier:
+with open(maps[0], "r") as fichier:
 
     # On lit chaque caractère du fichier
     for l in fichier.read():
@@ -46,8 +47,13 @@ COL:int = terrain_size // LINE
 item_grid:list[list] = [0 for _ in range(COL * LINE)]
 bomb_grid:list[Bomb] = []
 
+
+# Make a list of all players
+player_list:list[Player] = []
+
 # Création du joueur
 joueur:Player = Player(1, 1, "Hugo")
+player_list.append(joueur)
 
 # === TEXTURE INITIALISATION ===
 
@@ -100,6 +106,12 @@ explosion_3 = pygame.transform.scale(explosion_3, (int(X_SIZE), int(Y_SIZE)))
 explosion_4 = pygame.transform.scale(explosion_4, (int(X_SIZE), int(Y_SIZE)))
 explosion_5 = pygame.transform.scale(explosion_5, (int(X_SIZE), int(Y_SIZE)))
 
+speed = pygame.image.load(f"{bombe_texture_path}speed.png")
+onemorebomb = pygame.image.load(f"{bombe_texture_path}onemorebomb.png")
+
+speed = pygame.transform.scale(speed, (int(X_SIZE), int(Y_SIZE)))
+onemorebomb = pygame.transform.scale(onemorebomb, (int(X_SIZE), int(Y_SIZE)))
+
 # ==============================
 
 
@@ -123,7 +135,7 @@ while True:
             pygame.quit()
             sys.exit()
 
-    
+        # Gestion des controles utilisateurs
         elif event.type == pygame.KEYDOWN:
             index = (joueur.y+1) * COL + joueur.x
             if event.key == pygame.K_LEFT and joueur.x > 0:
@@ -143,11 +155,27 @@ while True:
                     joueur.y += 1
                 player_image = player_down
 
-            elif event.key == pygame.K_SPACE and terrain_grid[index] != 4:
+
+            # Une fois que le joueur s'est deplacé
+            index = (joueur.y+1) * COL + joueur.x
+            
+            # Si le joueur est sur un item
+            item_cell = item_grid[index]
+            match item_cell:
+                case 1:
+                    joueur.bombe_max += 1
+                    item_grid[index] = 0
+
+                case 2:
+                    joueur.bombe_speed += 1
+                    item_grid[index] = 0
+                    
+
+            if event.key == pygame.K_SPACE and terrain_grid[index] != 4:
 
                 # Si le joueur à encore des bombes à poser
                 if joueur.bombe_max > joueur.bombe_posee:
-                    bomb_grid.append(Bomb(joueur.x, joueur.y+1, joueur.range, terrain_grid[index], joueur))
+                    bomb_grid.append(Bomb(joueur.x, joueur.y+1, joueur.range, terrain_grid[index], joueur, joueur.bombe_speed))
                     joueur.bombe_posee += 1
                     terrain_grid[index] = 4
                 
@@ -163,47 +191,34 @@ while True:
             fenetre.blit(terrain_list[cell], (j * X_SIZE, i * Y_SIZE))
 
     BOMB_TIMER:int = 60 #ticks per frame
-    EXPLO_TIMER:int = 20 #ticks
+    EXPLO_TIMER:int = 5 #ticks
 
     # Pour chaque bombe posée
     for Bombe in bomb_grid:
-        Bombe.tick += 1
 
-        print(Bombe.tick)
+        # On tick la bombe selon son tick rate (cf. power up)
+        Bombe.tick += Bombe.tick_rate
+
+        #print(Bombe.tick)
         # Si la bombe explose
-        if Bombe.tick == 180:
+        if Bombe.tick == BOMB_TIMER*3:
+
             # On actualise la capacité du joueur
             Bombe.origin.bombe_posee -= 1
+
             # On replace le terrain d'origine
             terrain_grid[Bombe.x + Bombe.y * COL] = Bombe.cell_from
 
+            # On regarde dans les 4 directions via la fonction Explosion
+            Explosion(Map=terrain_grid, Col=COL, Bombe=Bombe, Players=player_list, Item_map=item_grid)
+
+            
 
 
 
 
-            for i in range(Bombe.x - Bombe.range, Bombe.x + Bombe.range + 1):
-                idx = i + Bombe.y * COL
-                print(idx, terrain_grid[idx])
-                # Si la bombe explose sur un mur
-                if terrain_grid[idx] == 3:
-                    # On regarde la case superieur pour savoir si remplacer par une ombre ou un plain
-                    terrain_grid[idx] = 1 if terrain_grid[idx - COL] != 0 and terrain_grid[idx - COL] != 3 else 2
 
-                    # Si la case en dessous est une ombre changer le sprite
-                    terrain_grid[idx + COL] = 1
-
-            for i in range(Bombe.y - Bombe.range, Bombe.y + Bombe.range + 1):
-                idx = Bombe.x + i * COL
-
-                # Si la bombe explose sur un mur
-                if terrain_grid[idx] == 3:
-                    # On regarde la case superieur pour savoir si remplacer par une ombre ou un plain
-                    terrain_grid[idx] = 1 if terrain_grid[idx - COL] != 0 and terrain_grid[idx - COL] != 3 else 2
-
-                    # Si la case en dessous est une ombre changer le sprite
-                    terrain_grid[idx + COL] = 1
-
-        elif Bombe.tick == 300:
+        elif Bombe.tick >= (BOMB_TIMER*3 + EXPLO_TIMER*6):
             
             """
             On doit attendre la fin de l'anim de l'explosion
@@ -217,14 +232,29 @@ while True:
         else:
             
             # Sinon on affiche la texture de la bombe
-            if Bombe.tick < 180:
+            # Si elle n'a pas encore explosée
+            if Bombe.tick < BOMB_TIMER*3:
+                # Le sprite de la bombe en cours d'explosion
                 fenetre.blit(bombe_sprite[Bombe.tick//BOMB_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
             else:
+                # Sinon le sprite de l'explosion
                 if Bombe.tick % EXPLO_TIMER == 0:
                     fenetre.blit(grass, (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
-                fenetre.blit(explo_sprite[(Bombe.tick - 180)//EXPLO_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
+                fenetre.blit(explo_sprite[(Bombe.tick - BOMB_TIMER*3)//EXPLO_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
 
 
+    for i in range(len(item_grid)):
+        match item_grid[i]:
+            case 1:
+                fenetre.blit(onemorebomb, (i%COL * X_SIZE, i//COL * Y_SIZE))
+                
+            case 2:
+                fenetre.blit(speed, (i%COL * X_SIZE, i//COL * Y_SIZE))
+                
+
+
+
+    # Et enfin on affiche le joueur
     fenetre.blit(player_image, (joueur.x * X_SIZE, joueur.y * Y_SIZE))
 
 

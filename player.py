@@ -9,6 +9,8 @@ class Player():
         self.bombe_max = 1
         self.bombe_posee = 0
 
+        self.bombe_speed = 1
+
         # Detail des bombes
-        self.range = 2
+        self.range = 4
         pass
