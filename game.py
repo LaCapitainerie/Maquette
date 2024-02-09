@@ -42,6 +42,7 @@ with open(maps[0], "r") as fichier:
 
 # On divise le nombre de case par les lignes pour avoir le nombre de colonne
 COL:int = terrain_size // LINE
+print(f"Dimension : {COL} / {LINE}")
 
 # On genère les différentes layers
 item_grid:list[list] = [0 for _ in range(COL * LINE)]

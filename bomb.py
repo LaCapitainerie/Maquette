@@ -29,7 +29,7 @@ def Explosion(Map:list[int], Line:int, Col:int, Bombe:Bomb, Players:list[Player]
     for i in range(1, Bombe.range + 1):
         idx = Bombe.x + i + Bombe.y * Col
         # Si on est hors du terrain on arrete
-        if idx == Line:
+        if (Bombe.x + i) == Col:
             break
         cel = Map[idx]
         # Si on tape contre un mur on arrête la deflagration
@@ -62,7 +62,7 @@ def Explosion(Map:list[int], Line:int, Col:int, Bombe:Bomb, Players:list[Player]
     for i in range(1, Bombe.range + 1):
         idx = Bombe.x - i + Bombe.y * Col
         # Si on est hors du terrain on arrete
-        if idx == -1:
+        if (Bombe.x - i) == -1:
             break
         cel = Map[idx]
         # Si on tape contre un mur on arrête la deflagration
@@ -93,7 +93,7 @@ def Explosion(Map:list[int], Line:int, Col:int, Bombe:Bomb, Players:list[Player]
     for i in range(1, Bombe.range + 1):
         idx = Bombe.x + (Bombe.y + i) * Col
         # Si on est hors du terrain on arrete
-        if idx == Line:
+        if (Bombe.y + i) == Line:
             break
         cel = Map[idx]
         # Si on tape contre un mur on arrête la deflagration
@@ -123,7 +123,11 @@ def Explosion(Map:list[int], Line:int, Col:int, Bombe:Bomb, Players:list[Player]
     # Explosion vers le haut
     for i in range(1, Bombe.range + 1):
         idx = Bombe.x + (Bombe.y - i) * Col
+        # Si on est hors du terrain on arrete
+        if (Bombe.y - i) == -1:
+            break
         cel = Map[idx]
+        # Si on tape contre un mur on arrête la deflagration
         if cel == 0:
             break
         else:
