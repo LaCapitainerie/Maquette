@@ -12,5 +12,5 @@ class Player():
         self.bombe_speed = 1
 
         # Detail des bombes
-        self.range = 4
+        self.range = 1
         pass
