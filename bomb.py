@@ -23,12 +23,16 @@ class Bomb():
         pass
 
 
-def Explosion(Map:list[int], Col:int, Bombe:Bomb, Players:list[Player], Item_map:list[int]):
+def Explosion(Map:list[int], Line:int, Col:int, Bombe:Bomb, Players:list[Player], Item_map:list[int]):
 
     # Explosion vers la droite
     for i in range(1, Bombe.range + 1):
         idx = Bombe.x + i + Bombe.y * Col
+        # Si on est hors du terrain on arrete
+        if idx == Line:
+            break
         cel = Map[idx]
+        # Si on tape contre un mur on arrête la deflagration
         if cel == 0:
             break
         else:
@@ -57,7 +61,11 @@ def Explosion(Map:list[int], Col:int, Bombe:Bomb, Players:list[Player], Item_map
     # Explosion vers la gauche
     for i in range(1, Bombe.range + 1):
         idx = Bombe.x - i + Bombe.y * Col
+        # Si on est hors du terrain on arrete
+        if idx == -1:
+            break
         cel = Map[idx]
+        # Si on tape contre un mur on arrête la deflagration
         if cel == 0:
             break
         else:
@@ -84,7 +92,11 @@ def Explosion(Map:list[int], Col:int, Bombe:Bomb, Players:list[Player], Item_map
     # Explosion vers le bas
     for i in range(1, Bombe.range + 1):
         idx = Bombe.x + (Bombe.y + i) * Col
+        # Si on est hors du terrain on arrete
+        if idx == Line:
+            break
         cel = Map[idx]
+        # Si on tape contre un mur on arrête la deflagration
         if cel == 0:
             break
         else:

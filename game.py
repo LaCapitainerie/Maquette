@@ -58,7 +58,7 @@ player_list.append(joueur)
 # === TEXTURE INITIALISATION ===
 
 player_texture_path:str = "./assets/"
-terrain_texture_path:str = "./assets/"
+terrain_texture_path:str = "./assets/tiles/"
 bombe_texture_path:str = "./assets/"
 explosion_texture_path:str = "./assets/"
 
@@ -123,13 +123,15 @@ explo_sprite:list[pygame.Surface] = [explosion_0, explosion_1, explosion_2, expl
 
 
 
-player_image = player_down
+player_image:pygame.Surface = player_down # On met le sprite par defaut vers le bas
 
 fenetre = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Bomberman")
 clock = pygame.time.Clock()
 
 while True:
+    fenetre.fill((0, 0, 0))
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -210,7 +212,7 @@ while True:
             terrain_grid[Bombe.x + Bombe.y * COL] = Bombe.cell_from
 
             # On regarde dans les 4 directions via la fonction Explosion
-            Explosion(Map=terrain_grid, Col=COL, Bombe=Bombe, Players=player_list, Item_map=item_grid)
+            Explosion(Map=terrain_grid, Line=LINE, Col=COL, Bombe=Bombe, Players=player_list, Item_map=item_grid)
 
             
 
