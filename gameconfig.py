@@ -2,10 +2,10 @@ import pygame;
 
 # Ratio of the screen
 WIDTH:int = 800
-HEIGHT:int = 600
+HEIGHT:int = 700
 
 # Parameter of the zoom
-ZOOM:int = 2
+ZOOM:int = 3
 
 # Size of the assets
 X_SIZE:int = 16 * ZOOM

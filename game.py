@@ -106,6 +106,14 @@ while True:
             cell:int = terrain_grid[i][j]
             fenetre.blit(terrain_list[cell], (j * X_SIZE, i * Y_SIZE))
 
+            # Affichage des items en plus
+            match item_grid[i][j]:
+                case 1:
+                    fenetre.blit(onemorebomb, (j * X_SIZE, i * Y_SIZE))
+                    
+                case 2:
+                    fenetre.blit(speed, (j * X_SIZE, i * Y_SIZE))
+
     # Pour chaque bombe posée
     for Bombe in bomb_grid:
 
@@ -155,17 +163,7 @@ while True:
                     fenetre.blit(grass, (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
                 fenetre.blit(explo_sprite[(Bombe.tick - BOMB_TIMER*3)//EXPLO_TIMER], (Bombe.x * X_SIZE, Bombe.y * Y_SIZE))
 
-
-    for i in range(len(item_grid)):
-        match item_grid[i]:
-            case 1:
-                fenetre.blit(onemorebomb, (i%COL * X_SIZE, i//COL * Y_SIZE))
-                
-            case 2:
-                fenetre.blit(speed, (i%COL * X_SIZE, i//COL * Y_SIZE))
-                
-
-
+    
 
     # Et enfin on affiche le joueur
     fenetre.blit(player_image, (joueur.x * X_SIZE,(joueur.y - 1) * Y_SIZE))

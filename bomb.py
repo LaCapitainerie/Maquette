@@ -82,7 +82,7 @@ def Explosion(Map:list[list[int]], Line:int, Col:int, Bombe:Bomb, Players:list[P
 
 
                 # On regarde la case superieur pour savoir si remplacer par une ombre ou un plain
-                Map[Bombe.y][Bombe.x - i] = 1 if Map[Bombe.y - 1][Bombe.x - i] != 0 and Map[Bombe.y - 1][Bombe.x - i] != 3 else 2
+                Map[Bombe.y][Bombe.x - i] = 1 if Map[Bombe.y][Bombe.x - i] != 0 and Map[Bombe.y][Bombe.x - i] != 3 else 2
 
                 # Si la case en dessous est une ombre changer le sprite
                 Map[Bombe.y + 1][Bombe.x - i] = 1
@@ -94,7 +94,8 @@ def Explosion(Map:list[list[int]], Line:int, Col:int, Bombe:Bomb, Players:list[P
         # Si on est hors du terrain on arrete
         if (Bombe.y + i) == Line:
             break
-        cel = Map[Bombe.x][Bombe.y + i]
+
+        cel = Map[Bombe.y + i][Bombe.x]
         # Si on tape contre un mur on arrête la deflagration
         if cel == 0:
             break
@@ -106,17 +107,16 @@ def Explosion(Map:list[list[int]], Line:int, Col:int, Bombe:Bomb, Players:list[P
 
 
             # Si la bombe explose sur un mur
-            if Map[Bombe.x][Bombe.y + i] == 3:
+            if Map[Bombe.y + i][Bombe.x] == 3:
 
                 # On appelle le generateur d'item qui renvoi ou non un item
-                Item_map[Bombe.x][Bombe.y + i] = make_item()
+                Item_map[Bombe.y + i][Bombe.x] = make_item()
 
-
-                # On regarde la case superieur pour savoir si remplacer par une ombre ou un plain
-                Map[Bombe.x][Bombe.y + i] = 1 if Map[Bombe.x][Bombe.y + i - 1] != 0 and Map[Bombe.x][Bombe.y + i - 1] != 3 else 2
-
+                # Comme la bombe était au dessus il ne peut pas y avoir de bloc qui fait de l'ombre
+                Map[Bombe.y + i][Bombe.x] = 1
+                
                 # Si la case en dessous est une ombre changer le sprite
-                Map[Bombe.x][Bombe.y + i + 1] = 1
+                Map[Bombe.y + i + 1][Bombe.x] = 1
         pass
 
     # Explosion vers le Haut
@@ -125,7 +125,7 @@ def Explosion(Map:list[list[int]], Line:int, Col:int, Bombe:Bomb, Players:list[P
         # Si on est hors du terrain on arrete
         if (Bombe.y - i) == Line:
             break
-        cel = Map[Bombe.x][Bombe.y - i]
+        cel = Map[Bombe.y - i][Bombe.x]
         # Si on tape contre un mur on arrête la deflagration
         if cel == 0:
             break
@@ -137,16 +137,18 @@ def Explosion(Map:list[list[int]], Line:int, Col:int, Bombe:Bomb, Players:list[P
 
 
             # Si la bombe explose sur un mur
-            if Map[Bombe.x][Bombe.y - i] == 3:
+            if Map[Bombe.y - i][Bombe.x] == 3:
 
                 # On appelle le generateur d'item qui renvoi ou non un item
-                Item_map[Bombe.x][Bombe.y - i] = make_item()
+                Item_map[Bombe.y - i][Bombe.x] = make_item()
 
 
-                Map[Bombe.x][Bombe.y - i] = 1
+                # On regarde la case superieur pour savoir si remplacer par une ombre ou un plain
+                Map[Bombe.y - i][Bombe.x] = 1 if Map[Bombe.y - i - 1][Bombe.x] != 0 and Map[Bombe.y - i - 1][Bombe.x] != 3 else 2
+
 
                 # Si la case en dessous est une ombre changer le sprite
-                Map[Bombe.x][Bombe.y - i + 1] = 1
+                Map[Bombe.y - i + 1][Bombe.x] = 1
         pass
     pass
 
